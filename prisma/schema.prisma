@@ -1,0 +1,145 @@
+// Shared Flat Finder — Prisma schema
+// Matches the data model in section 28 of the master prompt, extended with
+// a group scope on preferences/swipes (a person can be in more than one group)
+// and a couple of small demo-support fields.
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String        @id @default(cuid())
+  name        String
+  emoji       String        @default("🙂")
+  createdAt   DateTime      @default(now())
+  memberships GroupMember[]
+  preferences Preference[]
+  locks       PreferenceLock[]
+  swipes      ApartmentSwipe[]
+  discussions Discussion[]
+  createdGroups Group[]     @relation("GroupCreator")
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  city        String
+  moveInDate  String?
+  inviteCode  String   @unique @default(cuid())
+  createdById String
+  createdBy   User     @relation("GroupCreator", fields: [createdById], references: [id])
+  members     GroupMember[]
+  shortlist   GroupShortlist[]
+  discussions Discussion[]
+  createdAt   DateTime @default(now())
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isCreator Boolean @default(false)
+  status   String   @default("PENDING") // PENDING | COMPLETE
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model Preference {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId     String
+  category    String   // BUDGET | LOCATION | COMMUTE | APARTMENT | LIFESTYLE
+  requirement String   // e.g. "lift", "bedrooms", "Baner"
+  priority    String   // DEALBREAKER | MUST_HAVE | PREFER | NICE
+  value       String?  // JSON-encoded extra data (numbers, thresholds, etc.)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, groupId, category, requirement])
+}
+
+model PreferenceLock {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId  String
+  lockedAt DateTime @default(now())
+
+  @@unique([userId, groupId])
+}
+
+model Listing {
+  id             String  @id @default(cuid())
+  title          String
+  location       String
+  rent           Int
+  bedrooms       Int
+  bathrooms      Int
+  floor          Int
+  hasLift        Boolean
+  parking        Boolean
+  balcony        Boolean
+  petFriendly    Boolean
+  furnished      String  // furnished | semi | unfurnished
+  gatedSociety   Boolean @default(false)
+  powerBackup    Boolean @default(false)
+  waterSupply    String  @default("municipal")
+  security       Boolean @default(false)
+  amenities      String  // JSON array string
+  image          String
+  source         String  @default("Demo data")
+  availability   String  @default("Available now")
+  commuteMinutes String  // JSON map: { "<location key>": minutes }
+  isDemo         Boolean @default(true)
+  swipes         ApartmentSwipe[]
+  shortlists     GroupShortlist[]
+  discussions    Discussion[]
+}
+
+model ApartmentSwipe {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId   String
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  action    String   // LIKE | PASS
+  reason    String?
+  timestamp DateTime @default(now())
+
+  @@unique([userId, groupId, listingId])
+}
+
+model GroupShortlist {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  status    String   @default("SHORTLISTED") // SHORTLISTED | VISIT_SCHEDULED | REMOVED
+  addedAt   DateTime @default(now())
+
+  @@unique([groupId, listingId])
+}
+
+model Discussion {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  tag       String?  // CONCERN | ACCEPTABLE
+  timestamp DateTime @default(now())
+}
