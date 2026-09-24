@@ -14,7 +14,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ gro
 
   const deck = deckForGroup(group.city);
   const listings = await getAllListings();
-  const results = matchListingsForGroup(listings, deck, locked);
+  // Never surface a listing that violates someone's dealbreaker (spec section 16) —
+  // this feed drives Apartment Tinder, so excluded listings must not be swipeable.
+  const results = matchListingsForGroup(listings, deck, locked).filter((r) => !r.excluded);
 
   return NextResponse.json({ ready: true, results });
 }

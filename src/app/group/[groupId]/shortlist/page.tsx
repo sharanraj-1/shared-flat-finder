@@ -34,9 +34,8 @@ function ShortlistContent({ groupId }: { groupId: string }) {
     await Promise.all(
       shortlist.map(async (s) => {
         const { result, reactions } = await getTradeoffs(groupId, s.listing.id);
-        reasonMap[s.listing.id] = result.perUser
-          .flatMap((u) => u.gets.slice(0, 2).map((g) => g.label))
-          .slice(0, 4);
+        const allGetLabels = result.perUser.flatMap((u) => u.gets.map((g) => g.label));
+        reasonMap[s.listing.id] = Array.from(new Set(allGetLabels)).slice(0, 4);
         likedMap[s.listing.id] = reactions.filter((r) => r.action === "LIKE").map((r) => r.person.name);
       })
     );

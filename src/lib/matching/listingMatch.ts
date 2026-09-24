@@ -68,13 +68,14 @@ function cardIdFor(pref: StoredPreference): string {
 export function matchListingForGroup(
   listing: ListingRecord,
   deck: PreferenceCard[],
-  members: MemberPreferences[]
+  members: MemberPreferences[],
+  groupSize: number = members.length
 ): ListingMatchResult {
   const exclusionReasons: ExclusionReason[] = [];
   const perMemberResults: { person: PersonSummary; results: EvaluationResult[] }[] = [];
 
   for (const member of members) {
-    const results = evaluateAllCards(deck, member.preferences, listing, members.length);
+    const results = evaluateAllCards(deck, member.preferences, listing, groupSize);
     perMemberResults.push({ person: member.person, results });
     for (const r of results) {
       if (r.status === "excluded") {

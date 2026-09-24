@@ -40,9 +40,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ gro
     if (group && member && listing) {
       const deck = deckForGroup(group.city);
       const preferences = await getMemberPreferences(groupId, userId);
-      const evaluation = matchListingForGroup(listing, deck, [
-        { person: toPersonSummary(member), preferences },
-      ]);
+      const evaluation = matchListingForGroup(
+        listing,
+        deck,
+        [{ person: toPersonSummary(member), preferences }],
+        group.members.length
+      );
       reason = evaluation.exclusionReasons[0]?.note ?? evaluation.perUser[0]?.compromises[0]?.note ?? null;
     }
   }
