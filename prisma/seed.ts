@@ -17,36 +17,32 @@ async function main() {
   await prisma.listing.deleteMany();
   await prisma.user.deleteMany();
 
-  const listings = await Promise.all(
-    DEMO_LISTINGS.map((l) =>
-      prisma.listing.create({
-        data: {
-          title: l.title,
-          location: l.location,
-          rent: l.rent,
-          bedrooms: l.bedrooms,
-          bathrooms: l.bathrooms,
-          floor: l.floor,
-          hasLift: l.hasLift,
-          parking: l.parking,
-          balcony: l.balcony,
-          petFriendly: l.petFriendly,
-          furnished: l.furnished,
-          gatedSociety: l.gatedSociety,
-          powerBackup: l.powerBackup,
-          waterSupply: l.waterSupply,
-          security: l.security,
-          amenities: JSON.stringify(l.amenities),
-          image: l.image,
-          source: "Demo data",
-          availability: "Available now",
-          commuteMinutes: JSON.stringify(l.commuteMinutes),
-          isDemo: true,
-        },
-      })
-    )
-  );
-  console.log(`Created ${listings.length} demo listings.`);
+  const { count: listingCount } = await prisma.listing.createMany({
+    data: DEMO_LISTINGS.map((l) => ({
+      title: l.title,
+      location: l.location,
+      rent: l.rent,
+      bedrooms: l.bedrooms,
+      bathrooms: l.bathrooms,
+      floor: l.floor,
+      hasLift: l.hasLift,
+      parking: l.parking,
+      balcony: l.balcony,
+      petFriendly: l.petFriendly,
+      furnished: l.furnished,
+      gatedSociety: l.gatedSociety,
+      powerBackup: l.powerBackup,
+      waterSupply: l.waterSupply,
+      security: l.security,
+      amenities: JSON.stringify(l.amenities),
+      image: l.image,
+      source: "Demo data",
+      availability: "Available now",
+      commuteMinutes: JSON.stringify(l.commuteMinutes),
+      isDemo: true,
+    })),
+  });
+  console.log(`Created ${listingCount} demo listings.`);
 
   const riya = await prisma.user.create({ data: { name: "Riya", emoji: "🌸" } });
   const meera = await prisma.user.create({ data: { name: "Meera", emoji: "🌿" } });
@@ -55,7 +51,7 @@ async function main() {
   const group = await prisma.group.create({
     data: {
       name: "Riya • Meera • Kavita",
-      city: "Pune",
+      city: "Bengaluru",
       moveInDate: "October 2026",
       createdById: riya.id,
     },

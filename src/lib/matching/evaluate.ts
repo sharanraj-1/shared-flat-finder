@@ -32,6 +32,14 @@ function bathroomMatches(choice: string, actual: number): boolean {
   return actual === Number(choice);
 }
 
+// "Matching can be a little relaxed": numeric hard ceilings (budget max,
+// commute max) get a small grace window before they actually exclude a
+// listing, instead of a razor's-edge cutoff. Boolean/choice/location
+// dealbreakers stay hard — those are the ones the spec explicitly wants
+// enforced (e.g. "no lift = dealbreaker" should still exclude).
+const BUDGET_MAX_GRACE = 0.18; // 18% over max still shown, as a compromise
+const COMMUTE_MAX_GRACE_MINUTES = 15; // up to 15 min over the limit still shown
+
 export interface EvaluationContext {
   // Listing.rent is the whole apartment's rent; each person's budget cards
   // are about their own monthly contribution, so we split it by group size.
@@ -106,7 +114,8 @@ export function evaluateCard(
       const value = pref.value as BudgetValue | null;
       if (!value) return { ...base, status: "not-applicable", note: "No budget set" };
       const share = Math.round(listing.rent / Math.max(context.groupSize, 1));
-      if (share > value.max) {
+      const graceMax = value.max * (1 + BUDGET_MAX_GRACE);
+      if (share > graceMax) {
         return { ...base, status: "excluded", note: `Your share ₹${share.toLocaleString("en-IN")} exceeds your max ₹${value.max.toLocaleString("en-IN")}` };
       }
       if (share > value.comfortable) {
@@ -124,16 +133,24 @@ export function evaluateCard(
       if (!value) return { ...base, status: "not-applicable", note: "No commute limit set" };
       const actual = listing.commuteMinutes[card.commuteKey];
       if (actual === undefined) return { ...base, status: "not-applicable", note: "Commute unknown" };
+      const dest = card.commuteKey === "family" ? "family" : "work";
 
       if (card.mode === "max") {
-        if (actual > value.minutes) {
+        if (actual > value.minutes + COMMUTE_MAX_GRACE_MINUTES) {
           return {
             ...base,
             status: "excluded",
-            note: `Commute exceeds your ${value.minutes} min limit (${actual} min)`,
+            note: `${actual} min from ${dest} exceeds your ${value.minutes} min limit`,
           };
         }
-        return { ...base, status: "satisfied", note: `${actual} min commute, within your limit` };
+        if (actual > value.minutes) {
+          return {
+            ...base,
+            status: "partial",
+            note: `${actual} min from ${dest}, ${actual - value.minutes} min over your limit`,
+          };
+        }
+        return { ...base, status: "satisfied", note: `${actual} min from ${dest}, within your limit` };
       }
 
       // preferred commute

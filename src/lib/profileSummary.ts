@@ -42,7 +42,10 @@ function describe(card: PreferenceCard, pref: StoredPreferenceDTO): string | nul
     case "commute": {
       const value = pref.value as CommuteValue | null;
       if (!value) return null;
-      return card.mode === "max" ? `Max ${value.minutes} min commute` : `Ideally ${value.minutes} min commute`;
+      const dest = card.commuteKey === "family" ? "family" : "work";
+      return card.mode === "max"
+        ? `Max ${value.minutes} min from ${dest}`
+        : `Ideally ${value.minutes} min to ${dest}`;
     }
     default:
       return null;

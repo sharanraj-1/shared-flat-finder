@@ -16,7 +16,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ gro
   const listings = await getAllListings();
   // Never surface a listing that violates someone's dealbreaker (spec section 16) —
   // this feed drives Apartment Tinder, so excluded listings must not be swipeable.
-  const results = matchListingsForGroup(listings, deck, locked).filter((r) => !r.excluded);
+  // With a 1000+ listing corpus, cap the swipeable feed to the strongest matches
+  // (already sorted by groupScore desc) rather than handing back everything.
+  const FEED_LIMIT = 60;
+  const results = matchListingsForGroup(listings, deck, locked)
+    .filter((r) => !r.excluded)
+    .slice(0, FEED_LIMIT);
 
-  return NextResponse.json({ ready: true, results });
+  return NextResponse.json({ ready: true, results, totalCandidates: listings.length });
 }

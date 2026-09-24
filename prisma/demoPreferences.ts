@@ -7,10 +7,15 @@ export interface DemoPreferenceInput {
   value?: unknown;
 }
 
-// Matches the exact scenario in master prompt section 33. Every card in the
-// deck gets a value so the matching engine has a complete picture for each
-// person — the ones the spec calls out explicitly use the stated priority;
-// everything else gets a plausible default for a young professional in Pune.
+// Bengaluru scenario, refined from the case study:
+// - Riya has a firm "20-minute rule" for family (and wants a gym nearby).
+// - Meera's lift requirement is a genuine dealbreaker (a knee problem, not
+//   a preference) — that one stays hard even though budget/commute numbers
+//   are given some slack elsewhere.
+// - Kavita has a tight commute limit to her office in the Whitefield /
+//   Electronic City corridor and cares about parking.
+// Every card in the deck gets a value so the matching engine has a
+// complete picture for each person.
 
 function budget(comfortable: number, max: number): DemoPreferenceInput {
   return { requirement: "budget", category: "BUDGET", priority: "MUST_HAVE", value: { comfortable, max } };
@@ -21,7 +26,7 @@ function location(area: string, priority: Priority): DemoPreferenceInput {
   return { requirement: slug, category: "LOCATION", priority };
 }
 
-function commute(id: "commute-max" | "commute-preferred", minutes: number): DemoPreferenceInput {
+function commute(id: "commute-max" | "commute-preferred" | "commute-family", minutes: number): DemoPreferenceInput {
   return { requirement: id, category: "COMMUTE", priority: "MUST_HAVE", value: { minutes } };
 }
 
@@ -33,17 +38,35 @@ function choiceCard(requirement: string, choice: string, priority: Priority): De
   return { requirement, category: "APARTMENT", priority, value: { choice } };
 }
 
+const ALL_AREAS = [
+  "Koramangala",
+  "Indiranagar",
+  "HSR Layout",
+  "Whitefield",
+  "Electronic City",
+  "Marathahalli",
+  "Jayanagar",
+  "JP Nagar",
+  "Bellandur",
+  "Sarjapur Road",
+  "Hebbal",
+  "Yelahanka",
+];
+
+function locationsFor(loved: string[], liked: string[] = []): DemoPreferenceInput[] {
+  return ALL_AREAS.map((area) => {
+    if (loved.includes(area)) return location(area, "MUST_HAVE");
+    if (liked.includes(area)) return location(area, "PREFER");
+    return location(area, "NICE");
+  });
+}
+
 export const RIYA_PREFERENCES: DemoPreferenceInput[] = [
-  budget(22000, 25000),
-  location("Baner", "MUST_HAVE"),
-  location("Kothrud", "MUST_HAVE"),
-  location("Hinjewadi", "NICE"),
-  location("Wakad", "NICE"),
-  location("Viman Nagar", "NICE"),
-  location("Aundh", "NICE"),
+  budget(35000, 42000),
+  ...locationsFor(["Koramangala", "Indiranagar"], ["HSR Layout"]),
   commute("commute-max", 40),
   commute("commute-preferred", 25),
-  priorityCard("commute-family", "COMMUTE", "MUST_HAVE"),
+  commute("commute-family", 20), // her twenty-minute rule
   choiceCard("bedrooms", "3", "MUST_HAVE"),
   choiceCard("bathrooms", "2", "PREFER"),
   priorityCard("lift", "APARTMENT", "MUST_HAVE"),
@@ -66,19 +89,14 @@ export const RIYA_PREFERENCES: DemoPreferenceInput[] = [
 ];
 
 export const MEERA_PREFERENCES: DemoPreferenceInput[] = [
-  budget(22000, 25000),
-  location("Baner", "MUST_HAVE"),
-  location("Kothrud", "MUST_HAVE"),
-  location("Hinjewadi", "NICE"),
-  location("Wakad", "NICE"),
-  location("Viman Nagar", "NICE"),
-  location("Aundh", "NICE"),
+  budget(35000, 42000),
+  ...locationsFor(["Koramangala", "Indiranagar"], ["HSR Layout"]),
   commute("commute-max", 45),
   commute("commute-preferred", 30),
-  priorityCard("commute-family", "COMMUTE", "NICE"),
+  commute("commute-family", 30),
   choiceCard("bedrooms", "3", "MUST_HAVE"),
   choiceCard("bathrooms", "2", "MUST_HAVE"),
-  priorityCard("lift", "APARTMENT", "DEALBREAKER"),
+  priorityCard("lift", "APARTMENT", "DEALBREAKER"), // a knee problem, not a preference
   priorityCard("parking", "APARTMENT", "NICE"),
   priorityCard("balcony", "APARTMENT", "PREFER"),
   choiceCard("furnished", "semi", "PREFER"),
@@ -98,16 +116,11 @@ export const MEERA_PREFERENCES: DemoPreferenceInput[] = [
 ];
 
 export const KAVITA_PREFERENCES: DemoPreferenceInput[] = [
-  budget(22000, 25000),
-  location("Hinjewadi", "MUST_HAVE"),
-  location("Wakad", "MUST_HAVE"),
-  location("Baner", "PREFER"),
-  location("Kothrud", "NICE"),
-  location("Viman Nagar", "NICE"),
-  location("Aundh", "NICE"),
-  commute("commute-max", 25),
+  budget(35000, 42000),
+  ...locationsFor(["Whitefield", "Electronic City"], ["Koramangala"]),
+  commute("commute-max", 25), // tight limit to her office
   commute("commute-preferred", 15),
-  priorityCard("commute-family", "COMMUTE", "NICE"),
+  commute("commute-family", 40),
   choiceCard("bedrooms", "3", "MUST_HAVE"),
   choiceCard("bathrooms", "2", "PREFER"),
   priorityCard("lift", "APARTMENT", "PREFER"),
