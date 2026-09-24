@@ -46,14 +46,15 @@ export interface MemberPreferences {
 function evaluateAllCards(
   deck: PreferenceCard[],
   preferences: StoredPreference[],
-  listing: ListingRecord
+  listing: ListingRecord,
+  groupSize: number
 ): EvaluationResult[] {
   const byCardId = new Map(preferences.map((p) => [p.requirement === undefined ? "" : cardIdFor(p), p]));
   const results: EvaluationResult[] = [];
   for (const card of deck) {
     const pref = byCardId.get(card.id);
     if (!pref) continue;
-    results.push(evaluateCard(card, pref, listing));
+    results.push(evaluateCard(card, pref, listing, { groupSize }));
   }
   return results;
 }
@@ -73,7 +74,7 @@ export function matchListingForGroup(
   const perMemberResults: { person: PersonSummary; results: EvaluationResult[] }[] = [];
 
   for (const member of members) {
-    const results = evaluateAllCards(deck, member.preferences, listing);
+    const results = evaluateAllCards(deck, member.preferences, listing, members.length);
     perMemberResults.push({ person: member.person, results });
     for (const r of results) {
       if (r.status === "excluded") {

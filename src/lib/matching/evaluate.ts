@@ -32,10 +32,17 @@ function bathroomMatches(choice: string, actual: number): boolean {
   return actual === Number(choice);
 }
 
+export interface EvaluationContext {
+  // Listing.rent is the whole apartment's rent; each person's budget cards
+  // are about their own monthly contribution, so we split it by group size.
+  groupSize: number;
+}
+
 export function evaluateCard(
   card: PreferenceCard,
   pref: StoredPreference,
-  listing: ListingRecord
+  listing: ListingRecord,
+  context: EvaluationContext = { groupSize: 1 }
 ): EvaluationResult {
   const base = { cardId: card.id, label: card.label };
 
@@ -98,14 +105,15 @@ export function evaluateCard(
     case "budget": {
       const value = pref.value as BudgetValue | null;
       if (!value) return { ...base, status: "not-applicable", note: "No budget set" };
-      if (listing.rent > value.max) {
-        return { ...base, status: "excluded", note: `Rent ₹${listing.rent.toLocaleString("en-IN")} exceeds your max ₹${value.max.toLocaleString("en-IN")}` };
+      const share = Math.round(listing.rent / Math.max(context.groupSize, 1));
+      if (share > value.max) {
+        return { ...base, status: "excluded", note: `Your share ₹${share.toLocaleString("en-IN")} exceeds your max ₹${value.max.toLocaleString("en-IN")}` };
       }
-      if (listing.rent > value.comfortable) {
+      if (share > value.comfortable) {
         return {
           ...base,
           status: "partial",
-          note: `₹${(listing.rent - value.comfortable).toLocaleString("en-IN")} above your comfortable budget`,
+          note: `₹${(share - value.comfortable).toLocaleString("en-IN")} above your comfortable budget`,
         };
       }
       return { ...base, status: "satisfied", note: "Within your comfortable budget" };
