@@ -10,7 +10,7 @@ import { Input, Field } from "@/components/ui/Input";
 export default function CreateGroupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [city, setCity] = useState("Pune");
+  const city = "Bengaluru"; // only city with real demo listings/areas for now
   const [moveInDate, setMoveInDate] = useState("");
   const [creatorName, setCreatorName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,8 +53,10 @@ export default function CreateGroupPage() {
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Riya • Meera • Kavita" required />
         </Field>
 
-        <Field label="City">
-          <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Pune" required />
+        <Field label="City" hint="Bengaluru only, for now">
+          <div className="flex items-center gap-2 rounded-2xl border border-border bg-muted-bg px-4 py-3 text-sm font-semibold text-foreground">
+            🏙️ Bengaluru
+          </div>
         </Field>
 
         <Field label="Target move-in date" hint="Optional">
