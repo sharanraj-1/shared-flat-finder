@@ -74,9 +74,23 @@ export type PreferenceCard =
   | BudgetCard
   | CommuteCard;
 
-// Demo scope is Pune (matches section 33's demo scenario). Extending to
-// other cities just means adding another entry here.
+// Demo scope is Bengaluru. Extending to other cities just means adding
+// another entry here.
 export const CITY_AREAS: Record<string, string[]> = {
+  Bengaluru: [
+    "Koramangala",
+    "Indiranagar",
+    "HSR Layout",
+    "Whitefield",
+    "Electronic City",
+    "Marathahalli",
+    "Jayanagar",
+    "JP Nagar",
+    "Bellandur",
+    "Sarjapur Road",
+    "Hebbal",
+    "Yelahanka",
+  ],
   Pune: ["Baner", "Kothrud", "Hinjewadi", "Wakad", "Viman Nagar", "Aundh"],
 };
 
@@ -243,14 +257,14 @@ export function buildPreferenceDeck(city: string): PreferenceCard[] {
     },
   ];
 
-  const familyCommute: PriorityCard = {
+  const familyCommute: CommuteCard = {
     id: "commute-family",
     category: "COMMUTE",
     label: "Close to Family",
-    question: "How important is staying close to family?",
-    kind: "priority",
-    matchField: "family",
-    matchType: "amenity",
+    question: "What's the longest you'd want to be from family?",
+    kind: "commute",
+    commuteKey: "family",
+    mode: "max",
   };
 
   const lifestyle: PriorityCard[] = [
